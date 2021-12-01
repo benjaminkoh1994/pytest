@@ -23,11 +23,11 @@ pipeline {
         }
         /* OWASP Dependency Check */
         stage('OWASP-DC') {
-            // agent { 
-            //     docker {
-            //         image 'theimg:latest'
-            //     }
-            // }
+             agent { 
+                 docker {
+                     image 'theimg:latest'
+                 }
+            }
             steps {
                 dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'OWASP-DC'
                 
@@ -49,9 +49,9 @@ pipeline {
         stage('unit/sel test') {
             parallel {
                 stage('Deploy') {
-                    // agent {
-                    //     docker { image 'theimg:latest' }
-                    // }
+                     agent {
+                         docker { image 'theimg:latest' }
+                    }
                     steps {
                         script {
                             try {sh 'yes | docker stop thecon'}
@@ -69,9 +69,9 @@ pipeline {
                     }
                 }
                 stage('Headless Browser Test') {
-                    // agent {
-                    //     docker { image 'theimg:latest' }
-                    // }
+                     agent {
+                         docker { image 'theimg:latest' }
+                    }
                     steps {
                         sh 'nohup flask run & sleep 1'
                         sh 'pytest -s -rA --junitxml=test-report.xml'
