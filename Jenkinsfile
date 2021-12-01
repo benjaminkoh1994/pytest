@@ -1,5 +1,5 @@
 pipeline {
-    agent { dockerfile true }
+    agent any
     environment {
         // CI set to true to allow it to run in "non-watch" (i.e. non-interactive) mode
         CI = 'true'
