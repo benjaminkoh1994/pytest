@@ -63,7 +63,7 @@ pipeline {
                     }
                 }
                 stage('Headless Browser Test') {
-                    agent any
+                    docker { image 'python:3' }
                     steps {
                         sh 'nohup flask run & sleep 1'
                         // generate x07 pytest
