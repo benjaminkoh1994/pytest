@@ -55,7 +55,7 @@ pipeline {
                             catch (Exception e) {echo "no container to remove"}
                         }
 
-                        sh """sudo docker run -u root -d --rm -p 5000:5000 --name thecon \
+                        sh """docker run -u root -d --rm -p 5000:5000 --name thecon \
                         -v /var/run/docker.sock:/var/run/docker.sock \
                         -v "$HOME":/home \
                         -e VIRTUAL_PORT=5000 \
