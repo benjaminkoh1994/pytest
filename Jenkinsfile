@@ -23,11 +23,7 @@ pipeline {
         }
         /* OWASP Dependency Check */
         stage('OWASP-DC') {
-            agent { 
-                docker {
-                    image 'theimg:latest'
-                }
-            }
+            agent any
             steps {
                 dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'OWASP-DC'
                 
@@ -49,9 +45,7 @@ pipeline {
         stage('unit/sel test') {
             parallel {
                 stage('Deploy') {
-                    agent {
-                        docker { image 'theimg:latest' }
-                    }
+                    agent any
                     steps {
                         script {
                             try {sh 'yes | docker stop thecon'}
@@ -69,9 +63,7 @@ pipeline {
                     }
                 }
                 stage('Headless Browser Test') {
-                    agent {
-                        docker { image 'theimg:latest' }
-                    }
+                    agent any
                     steps {
                         sh 'nohup flask run & sleep 1'
                         // generate x07 pytest
