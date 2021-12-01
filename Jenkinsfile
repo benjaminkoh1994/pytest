@@ -67,7 +67,7 @@ pipeline {
                     steps {
                         sh 'nohup flask run & sleep 1'
                         // generate x07 pytest
-                        sh 'python -m pytest -s -rA --junitxml=test-report.xml'
+                        sh 'pytest -s -rA --junitxml=test-report.xml'
 
                         // generate x09 report
                         script {
