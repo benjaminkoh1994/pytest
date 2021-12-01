@@ -23,11 +23,7 @@ pipeline {
         }
         /* OWASP Dependency Check */
         stage('OWASP-DC') {
-            agent { 
-                docker {
-                    image 'theimg:latest'
-                }
-            }
+            agent any
             steps {
                 dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'OWASP-DC'
                 
@@ -49,9 +45,7 @@ pipeline {
         stage('unit/sel test') {
             parallel {
                 stage('Deploy') {
-                    agent {
-                        docker { image 'theimg:latest' }
-                    }
+                    agent any
                     steps {
                         script {
                             try {sh 'yes | docker stop thecon'}
@@ -61,7 +55,7 @@ pipeline {
                             catch (Exception e) {echo "no container to remove"}
                         }
 
-                        sh """docker run -u root -d --rm -p 5000:5000 --name thecon \
+                        sh """sudo docker run -u root -d --rm -p 5000:5000 --name thecon \
                         -v /var/run/docker.sock:/var/run/docker.sock \
                         -v "$HOME":/home \
                         -e VIRTUAL_PORT=5000 \
@@ -69,19 +63,10 @@ pipeline {
                     }
                 }
                 stage('Headless Browser Test') {
-                    agent {
-                        docker { image 'theimg:latest' }
-                    }
+                    agent any
                     steps {
                         sh 'nohup flask run & sleep 1'
-                        // generate x07 pytest
                         sh 'pytest -s -rA --junitxml=test-report.xml'
-
-                        // generate x09 report
-                        def scannerHome = tool 'SonarQube';
-                        withSonarQubeEnv('SonarQube') {
-                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=test -Dsonar.sources=."
-                        }
                         
                         input message: 'Finished using the web site? (Click "Proceed" to continue)'
                         
@@ -99,7 +84,6 @@ pipeline {
                     post {
                         always {
                             junit testResults: 'test-report.xml'
-                            reecordIssues enabledForFailure: true, tool: sonarQube()	
                         }
                     }
                 }
