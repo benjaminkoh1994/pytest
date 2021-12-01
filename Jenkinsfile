@@ -23,7 +23,11 @@ pipeline {
         }
         /* OWASP Dependency Check */
         stage('OWASP-DC') {
-            agent any
+            agent { 
+                docker {
+                    image 'theimg:latest'
+                }
+            }
             steps {
                 dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'OWASP-DC'
                 
@@ -45,7 +49,9 @@ pipeline {
         stage('unit/sel test') {
             parallel {
                 stage('Deploy') {
-                    agent any
+                    agent {
+                        docker { image 'theimg:latest' }
+                    }
                     steps {
                         script {
                             try {sh 'yes | docker stop thecon'}
@@ -63,10 +69,22 @@ pipeline {
                     }
                 }
                 stage('Headless Browser Test') {
-                    agent any
+                    agent {
+                        docker { image 'theimg:latest' }
+                    }
                     steps {
                         sh 'nohup flask run & sleep 1'
+                        // generate x07 pytest
                         sh 'pytest -s -rA --junitxml=test-report.xml'
+
+                        // generate x09 report
+                        script {
+                            def scannerHome = tool 'SonarQube';
+                            withSonarQubeEnv('SonarQube') {
+                                // rmb to change the "projectKey=your_project_name"
+                                sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=test -Dsonar.sources=."
+                            }
+                        }
                         
                         input message: 'Finished using the web site? (Click "Proceed" to continue)'
                         
@@ -84,6 +102,7 @@ pipeline {
                     post {
                         always {
                             junit testResults: 'test-report.xml'
+                            recordIssues enabledForFailure: true, tool: sonarQube()	
                         }
                     }
                 }
