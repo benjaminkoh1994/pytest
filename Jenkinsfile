@@ -63,7 +63,9 @@ pipeline {
                     }
                 }
                 stage('Headless Browser Test') {
-                    docker { image 'python:3' }
+                    agent {
+                        docker { image 'theimg:latest' }
+                    }
                     steps {
                         sh 'nohup flask run & sleep 1'
                         // generate x07 pytest
