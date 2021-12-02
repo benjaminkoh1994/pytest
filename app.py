@@ -25,5 +25,5 @@ def data():
         form_data = request.form
         return render_template('data.html',form_data = form_data)
  
- 
-app.run(host='localhost', port=5000)
+if __name__ == '__main__':
+    app.run("0.0.0.0", "5000")
