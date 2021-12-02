@@ -28,23 +28,6 @@ pipeline {
                 }
             }
         }
-        /* X06 OWASP Dependency Check */
-        stage('OWASP-DC') {
-            agent { 
-                docker { image 'theimg:latest'}
-            }
-            steps {
-                dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'OWASP-DC'
-                // --suppression suppression.xml  // suppress warnings xml 
-                // --enableExperimental // to test on python files
-                // --log odc.log // generate log file
-            }
-            post {
-                always {
-                    dependencyCheckPublisher pattern: 'dependency-check-report.xml'
-                }
-            }
-        }
         /* X07 Selenium portion */
         stage('unit/sel test') {
             parallel {
