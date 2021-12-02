@@ -13,9 +13,9 @@ pipeline {
             }
             steps {
                 script {
-                    try {sh 'yes | docker stop thecon'}
+                    try {sh 'yes | docker stop apptest'}
                     catch (Exception e) {echo "no container to stop"}
-                    try {sh 'yes | docker rm thecon'}
+                    try {sh 'yes | docker rm apptest'}
                     catch (Exception e) {echo "no container to remove"}        
                     try { sh 'yes | docker image prune' }
                     catch (Exception e) { echo "no dangling images deleted" }
@@ -28,14 +28,13 @@ pipeline {
                 }
             }
         }
-        /* OWASP Dependency Check */
+        /* X06 OWASP Dependency Check */
         stage('OWASP-DC') {
             agent { 
                 docker { image 'theimg:latest'}
             }
             steps {
                 dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'OWASP-DC'
-                
                 // --suppression suppression.xml  // suppress warnings xml 
                 // --enableExperimental // to test on python files
                 // --log odc.log // generate log file
@@ -43,13 +42,10 @@ pipeline {
             post {
                 always {
                     dependencyCheckPublisher pattern: 'dependency-check-report.xml'
-                    // untested codes of x08 below, do not uncomment unless you know what u doing. 
-                    // recordIssues enabledForFailure: true, tool: analysisParser(pattern: "dependency-check-report.xml", id: "owasp-dependency-check")
-                    // recordIssues enabledForFailure: true, tool: pyLint(pattern: 'pylint.log')
                 }
             }
         }
-        /* Selenium portion */
+        /* X07 Selenium portion */
         stage('unit/sel test') {
             parallel {
                 stage('Deploy') {
@@ -57,7 +53,12 @@ pipeline {
                     steps {
                         sh 'docker run -d -p 5000:5000 --name apptest --network testing theimg:latest'
                         input message: 'Finished using the web site? (Click "Proceed" to continue)'
-                        sh 'docker container stop apptest'
+                        script {
+                            try {sh 'yes | docker stop apptest'}
+                            catch (Exception e) {echo "no container to stop"}
+                            try {sh 'yes | docker rm apptest'}
+                            catch (Exception e) {echo "no container to remove"}  
+                        }
                     }
                 }
                 stage('Headless Browser Test') {
@@ -73,6 +74,9 @@ pipeline {
                     post {
                         always {
                             junit testResults: 'logs/uireport.xml'
+                            /* X08 Warnings Next Plugin */
+                            recordIssues enabledForFailure: true, tool: codeAnalysis()	
+                            recordIssues enabledForFailure: true, tool: codeChecker()
                         }
                     }
                 }
@@ -88,8 +92,11 @@ pipeline {
                 script {
                     def scannerHome = tool 'SonarQube';
                     withSonarQubeEnv('SonarQube') {
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=test -Dsonar.sources=. \
-                        -Dsonar.report.export.path=sonar-report.json"
+                        // rmb to change the "projectKey=your_project_name"
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=test -Dsonar.sources=."
+
+                        // code not generating report. do not uncomment unless yknow what u doing
+                        // sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=test -Dsonar.sources=. -Dsonar.report.export.path=logs/sonar-report.json"
                     }
                 }
             }
@@ -99,6 +106,5 @@ pipeline {
                 }
             }
         }
-        
     }
 }
